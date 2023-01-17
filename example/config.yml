@@ -1,0 +1,18 @@
+appId: xconfig
+env: dev
+
+#apollo配置，支持多实例多namespace
+apollo:
+  one:
+    endpoint: xxx
+    appId: xxx
+    namespaces:
+      one:
+        key: ApplicationConfig   #用于读取配置，保证全局唯一，避免相互覆盖
+        name: application        #注意：name不要带类型（例如application.properties），这里name和type分开配置
+        type: properties
+      two:
+        key: cipherConfig
+        name: cipher
+        type: properties
+    backupFile: /tmp/xconfig/apollo_bak/test.agollo #每个appId使用不同的备份文件名，避免相互覆盖
