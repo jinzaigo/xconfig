@@ -1,0 +1,2 @@
+# xconfig
+golang基于viper+agollo实现本地文件配置和远程apollo配置中心多实例快速接入
