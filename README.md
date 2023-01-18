@@ -1,5 +1,5 @@
 # xconfig
-golang基于[spf13/viper](https://github.com/spf13/viper) 和 [shima-park/agollo](https://github.com/shima-park/agollo) 实现本地文件配置和远程apollo配置中心多实例快速接入
+golang基于[spf13/viper](https://github.com/spf13/viper) 和 [shima-park/agollo](https://github.com/shima-park/agollo) 实现本地配置文件和远程apollo配置中心多实例快速接入
 
 ## 快速开始
 ### 获取安装
@@ -9,35 +9,35 @@ go get -u github.com/jinzaigo/xconfig
 
 ## Features
 * 支持viper包诸多同名方法
-* 支持本地文件和远程apollo配置热加载，实时更新
+* 支持本地配置文件和远程apollo配置热加载，实时更新
 * 使用sync.RWMutex读写锁，解决了viper并发读写不安全问题
 * 支持apollo配置中心多实例配置化快速接入
 
 ## 接入示例
 
-### 本地文件配置
+### 本地配置文件
 指定配置文件路径完成初始化，即可通过xconfig.GetLocalIns().xxx()链式操作，读取配置
 ```go
 package main
 
 import (
-	"fmt"
-	"github.com/jinzaigo/xconfig"
+    "fmt"
+    "github.com/jinzaigo/xconfig"
 )
 
 func main() {
-	if xconfig.IsLocalLoaded() {
-		fmt.Println("local config is loaded")
-		return
-	}
-	//初始化
-	configIns := xconfig.New(xconfig.WithFile("example/config.yml"))
-	xconfig.InitLocalIns(configIns)
+    if xconfig.IsLocalLoaded() {
+        fmt.Println("local config is loaded")
+        return
+    }
+    //初始化
+    configIns := xconfig.New(xconfig.WithFile("example/config.yml"))
+    xconfig.InitLocalIns(configIns)
 
-	//读取配置
-	fmt.Println(xconfig.GetLocalIns().GetString("appId"))
-	fmt.Println(xconfig.GetLocalIns().GetString("env"))
-	fmt.Println(xconfig.GetLocalIns().GetString("apollo.0.endpoint"))
+    //读取配置
+    fmt.Println(xconfig.GetLocalIns().GetString("appId"))
+    fmt.Println(xconfig.GetLocalIns().GetString("env"))
+    fmt.Println(xconfig.GetLocalIns().GetString("apollo.one.endpoint"))
 }
 ```
 
@@ -63,7 +63,7 @@ xxx支持的操作方法：
 - GetBool(key string) bool 
 - SubAndUnmarshal(key string, i interface{}) error 
 
-### apollo配置中心
+### 远程apollo配置中心
 
 指定配置类型与apollo信息完成初始化，即可通过xconfig.GetRemoteIns(key).xxx()链式操作，读取配置
 
@@ -73,7 +73,7 @@ xxx支持的操作方法：
 configIns := xconfig.New(xconfig.WithConfigType("properties"))
 err := configIns.AddApolloRemoteConfig(endpoint, appId, namespace, backupFile)
 if err != nil {
-	...handler
+    ...handler
 }
 xconfig.AddRemoteIns("ApplicationConfig", configIns)
 
@@ -83,9 +83,9 @@ fmt.Println(xconfig.GetRemoteIns("ApplicationConfig").AllSettings())
 
 多实例场景
 
-通过本地配置文件维护apollo配置信息，然后批量完成多个实例的初始化
+在本地配置文件config.yaml维护apollo配置信息，然后批量完成多个实例的初始化，即可通过xconfig.GetRemoteIns(key).xxx()链式操作，读取配置
 
-```
+```yaml
 #apollo配置，支持多实例多namespace
 apollo:
   one:
@@ -107,53 +107,53 @@ apollo:
 package main
 
 import (
-	"fmt"
-	"github.com/jinzaigo/xconfig"
+    "fmt"
+    "github.com/jinzaigo/xconfig"
 )
 
 type ApolloConfig struct {
-	Endpoint   string                     `json:"endpoint"`
-	AppId      string                     `json:"appId"`
-	Namespaces map[string]ApolloNameSpace `json:"namespaces"`
-	BackupFile string                     `json:"backupFile"`
+    Endpoint   string                     `json:"endpoint"`
+    AppId      string                     `json:"appId"`
+    Namespaces map[string]ApolloNameSpace `json:"namespaces"`
+    BackupFile string                     `json:"backupFile"`
 }
 
 type ApolloNameSpace struct {
-	Key  string `json:"key"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+    Key  string `json:"key"`
+    Name string `json:"name"`
+    Type string `json:"type"`
 }
 
 func main() {
-	//本地文件初始化
-	xconfig.InitLocalIns(xconfig.New(xconfig.WithFile("example/config.yml")))
-	if !xconfig.GetLocalIns().IsSet("apollo") {
-		fmt.Println("without apollo key")
-		return
-	}
+    //本地配置初始化
+    xconfig.InitLocalIns(xconfig.New(xconfig.WithFile("example/config.yml")))
+    if !xconfig.GetLocalIns().IsSet("apollo") {
+        fmt.Println("without apollo key")
+        return
+    }
 
-	apolloConfigs := make(map[string]ApolloConfig, 0)
-	err := xconfig.GetLocalIns().SubAndUnmarshal("apollo", &apolloConfigs)
-	if err != nil {
-		fmt.Println(apolloConfigs)
-		fmt.Println("SubAndUnmarshal error:", err.Error())
-		return
-	}
+    apolloConfigs := make(map[string]ApolloConfig, 0)
+    err := xconfig.GetLocalIns().SubAndUnmarshal("apollo", &apolloConfigs)
+    if err != nil {
+        fmt.Println(apolloConfigs)
+        fmt.Println("SubAndUnmarshal error:", err.Error())
+        return
+    }
 
-	//多实例初始化
-	for _, apolloConfig := range apolloConfigs {
-		for _, namespaceConf := range apolloConfig.Namespaces {
-			configIns := xconfig.New(xconfig.WithConfigType(namespaceConf.Type))
-			err = configIns.AddApolloRemoteConfig(apolloConfig.Endpoint, apolloConfig.AppId, namespaceConf.Name, apolloConfig.BackupFile)
-			if err != nil {
-				fmt.Println("AddApolloRemoteConfig error:" + err.Error())
-			}
-			xconfig.AddRemoteIns(namespaceConf.Key, configIns)
-		}
-	}
+    //多实例初始化
+    for _, apolloConfig := range apolloConfigs {
+        for _, namespaceConf := range apolloConfig.Namespaces {
+            configIns := xconfig.New(xconfig.WithConfigType(namespaceConf.Type))
+            err = configIns.AddApolloRemoteConfig(apolloConfig.Endpoint, apolloConfig.AppId, namespaceConf.Name, apolloConfig.BackupFile)
+            if err != nil {
+                fmt.Println("AddApolloRemoteConfig error:" + err.Error())
+            }
+            xconfig.AddRemoteIns(namespaceConf.Key, configIns)
+        }
+    }
 
-	//读取
-	fmt.Println(xconfig.GetRemoteIns("ApplicationConfig").AllSettings())
+    //读取
+    fmt.Println(xconfig.GetRemoteIns("ApplicationConfig").AllSettings())
 }
 
 ```

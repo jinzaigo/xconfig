@@ -24,7 +24,7 @@ func local() {
 	//读取配置
 	fmt.Println(xconfig.GetLocalIns().GetString("appId"))
 	fmt.Println(xconfig.GetLocalIns().GetString("env"))
-	fmt.Println(xconfig.GetLocalIns().GetString("apollo.0.endpoint"))
+	fmt.Println(xconfig.GetLocalIns().GetString("apollo.one.endpoint"))
 
 	//测试热加载
 	//for {
